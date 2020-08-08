@@ -4,9 +4,12 @@
 	tomado de: https://github.com/PhilGabardo/PPM-Filtering
 */
 
+//mpiexec -n 8 -f machinefile ./filter hamster.jpg h4.jpg 9
+
 #include <stdlib.h>
 #include "lib.h"
 #include <mpi.h>
+#include <time.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -34,16 +37,26 @@ int main(int argc, char** argv)
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &p);
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+	
+	char pname[MPI_MAX_PROCESSOR_NAME];
+    int name_len;
+    MPI_Get_processor_name(pname, &name_len);
 
 	int tag = 0;
 	int windowSize = atoi(argv[3]);
 
 	char convert_in[100];
 	char convert_out[100];
+	clock_t time;
 
-
+	//printf("Hello from %s processor %d of %d\n", pname, my_rank, p);
 	// Process 0 parses the PPM file and distributes size attributes
 	if (my_rank == 0) {
+
+		time=clock();
+		printf("Hello from %s processor %d of %d\n", pname, my_rank, p);
+		printf("Working on the filter...\n");
+		printf("\n");
 
 		sprintf(convert_in, "convert %s tmp_in.ppm", argv[1]);
 		system(convert_in);
@@ -82,6 +95,9 @@ int main(int argc, char** argv)
 
 	// Receive size attributes
 	else {
+		printf("Hello from %s processor %d of %d\n", pname, my_rank, p);
+		printf("Working on the filter...\n");
+		printf("\n");
 		dimensions = (Dimension*)malloc(sizeof(Dimension));
 		MPI_Recv(dimensions, 2, MPI_INT, 0, tag, MPI_COMM_WORLD, &status);
 		width = dimensions->width;
@@ -130,7 +146,7 @@ int main(int argc, char** argv)
 
 
 	// Process image	
-	outputImage = processImage(width, height, image, windowSize, argv[4]);
+	outputImage = processImage(width, height, image, windowSize);
 
 
 	// Send processed data back to P0
@@ -166,6 +182,22 @@ int main(int argc, char** argv)
 		sprintf(convert_out, "convert tmp_out.ppm %s", argv[2]);
 		system(convert_out);
 		system("rm tmp_*");
+
+		time=clock()-time;
+		printf("\n");
+		printf("Image Ready! \n");
+		printf("\n");
+
+		double totalTime = ((double)time)/CLOCKS_PER_SEC;
+		double MBsec   = ((double)(windowSize)) * 1000000.0 / (1024.0*1024.0);
+
+		printf("----------------------------------------------\n");
+
+		printf("\n");
+		printf("Tiempo Promedio = %.8f s\n", totalTime);
+		printf("Ancho de Banda = %.8f Mb/ms\n", MBsec/windowSize);
+		printf("\n");
+		printf("----------------------------------------------\n");
 
 	}
 

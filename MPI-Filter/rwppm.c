@@ -48,7 +48,7 @@ RGB * readPPM(char* file, int* width, int* height, int* max)
       exit(0);
     }
 
-  printf("%s is a PPM file\n", file);
+  //printf("%s is a PPM file\n", file);
   n = fscanf(fd, "%c",&c);
 
   while(c == '#') 
@@ -62,7 +62,7 @@ RGB * readPPM(char* file, int* width, int* height, int* max)
   n = fscanf(fd, "%d %d %d", width, height, max);
   assert(n==3);
 
-  printf("%d x %d image, max value= %d\n", *width, *height, *max);
+  //printf("%d x %d image, max value= %d\n", *width, *height, *max);
 
   // size of image
   int size = *width*(*height);
